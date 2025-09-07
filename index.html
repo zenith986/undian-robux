@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Undian Roblox — Demo</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial,Helvetica,sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#07102a 0%, #08142a 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px}
+    .wrap{width:100%;max-width:720px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px;justify-content:space-between}
+    .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#1e293b,#0ea5a9);display:flex;align-items:center;justify-content:center;font-weight:700}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:4px 0 18px;color:var(--muted)}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6);margin-bottom:20px}
+
+    form .row{display:flex;gap:8px;margin-bottom:8px}
+    input[type=text],input[type=password],input[type=number]{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    button{padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:600;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+
+    ul.participants{list-style:none;padding:0;margin:8px 0 0;max-height:300px;overflow:auto}
+    ul.participants li{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.02)}
+    .muted{color:var(--muted);font-size:13px}
+
+    .winner{text-align:center;padding:20px;border-radius:10px}
+    .big{font-size:28px;font-weight:800;margin:8px 0}
+    .confetti{font-size:22px}
+
+    footer{margin-top:12px;color:var(--muted);font-size:13px}
+    .login-card{max-width:360px;width:100%;}
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <!-- Halaman Login -->
+    <section class="card login-card" id="loginPage">
+      <h2 style="margin-top:0">Login Roblox (Demo)</h2>
+      <form id="loginForm" onsubmit="return false;">
+        <div class="row"><input id="loginUser" type="text" placeholder="Username" required /></div>
+        <div class="row"><input id="loginPass" type="password" placeholder="Password" required /></div>
+        <div class="row"><button id="loginBtn">Login</button></div>
+      </form>
+      <p class="muted">⚠️ Ini hanya simulasi login. Tidak terhubung ke Roblox asli.</p>
+    </section>
+
+    <!-- Halaman Utama -->
+    <div id="lotteryPage" style="display:none">
+      <header>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="logo">RBX</div>
+          <div>
+            <h1>Undian <span style="color:var(--accent)">Roblox</span> — Demo</h1>
+            <p class="lead">Prototype undian + cek profil Roblox.</p>
+          </div>
+        </div>
+        <button id="logoutBtn" class="secondary">Logout</button>
+      </header>
+
+      <!-- Cek Profil Roblox -->
+      <section class="card">
+        <h3>Cek Profil Roblox</h3>
+        <div class="row">
+          <input id="lookupInput" type="text" placeholder="Masukkan username Roblox" />
+          <button id="lookupBtn">Cari</button>
+        </div>
+        <div id="profileResult" class="muted">Belum ada pencarian.</div>
+      </section>
+
+      <!-- Daftar Peserta -->
+      <section class="card">
+        <h3>Daftar Peserta</h3>
+        <form id="addForm" onsubmit="return false;">
+          <div class="row">
+            <input id="nameInput" type="text" placeholder="Nama peserta (atau username)" required />
+            <button id="addBtn">Ikut Undian</button>
+          </div>
+        </form>
+        <ul id="list" class="participants" aria-live="polite"></ul>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="clearBtn" class="secondary">Hapus Semua</button>
+          <button id="shuffleBtn" class="secondary">Acak Peserta</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // LOGIN
+    const loginPage=document.getElementById('loginPage')
+    const lotteryPage=document.getElementById('lotteryPage')
+    document.getElementById('loginBtn').addEventListener('click',()=>{
+      const u=document.getElementById('loginUser').value.trim()
+      const p=document.getElementById('loginPass').value.trim()
+      if(u&&p){
+        alert(`Selamat datang, ${u}! (Login dummy)`)
+        loginPage.style.display='none'
+        lotteryPage.style.display='block'
+      }
+    })
+    document.getElementById('logoutBtn').addEventListener('click',()=>{
+      if(confirm('Yakin mau logout?')){
+        lotteryPage.style.display='none'
+        loginPage.style.display='block'
+        document.getElementById('loginUser').value=''
+        document.getElementById('loginPass').value=''
+      }
+    })
+
+    // PESERTA
+    let participants=JSON.parse(localStorage.getItem('rbx_participants')||'[]')
+    const listEl=document.getElementById('list')
+    const nameInput=document.getElementById('nameInput')
+
+    function renderParticipants(){
+      listEl.innerHTML=''
+      if(participants.length===0){
+        listEl.innerHTML='<li class="muted">Belum ada peserta</li>'
+        return
+      }
+      participants.forEach((p,i)=>{
+        const li=document.createElement('li')
+        li.innerHTML=`<span>${escapeHtml(p)}</span><button data-i="${i}" class="secondary">Hapus</button>`
+        listEl.appendChild(li)
+      })
+    }
+    function saveState(){localStorage.setItem('rbx_participants',JSON.stringify(participants))}
+
+    document.getElementById('addBtn').addEventListener('click',()=>{
+      const v=nameInput.value.trim()
+      if(!v)return
+      participants.push(v);nameInput.value=''
+      saveState();renderParticipants()
+    })
+    listEl.addEventListener('click',e=>{
+      if(e.target.tagName==='BUTTON'){
+        const i=Number(e.target.dataset.i)
+        participants.splice(i,1)
+        saveState();renderParticipants()
+      }
+    })
+    document.getElementById('clearBtn').addEventListener('click',()=
+
